@@ -219,10 +219,10 @@ func ProcessFilesIfPng(workspace string) {
 		return
 	}
 
-	// if check := CheckifPng(filepath.Join(parts, files[0].Name())); !check {
-	// 	return
-	// }
-	// fmt.Println("....................................................")
+	if check := CheckifPng(filepath.Join(parts, files[0].Name())); !check {
+		return
+	}
+	fmt.Println("....................................................")
 
 	for _, srcEntry := range files {
 		srcPath := filepath.Join(parts, srcEntry.Name())
