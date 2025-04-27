@@ -1,8 +1,8 @@
 package main
 
 import (
+	module "f/src"
 	"fmt"
-	module "main/src"
 )
 
 // download m3u8/html files
@@ -15,11 +15,14 @@ func main() {
 	// read file
 	downloadLinks, fileLinks := module.ReadFile(filePath)
 
+	workspace := module.FileNameWithoutExtension(*filePath)
+	module.CreateRequiredFolders(workspace)
+
 	// get links
-	linksFilename := module.PrepareLinks(downloadLinks, *filePath)
+	linksFilename := module.PrepareLinks(downloadLinks, workspace)
 
 	// write to playlist
-	module.PreparePlaylist(fileLinks, *filePath)
+	module.PreparePlaylist(fileLinks, workspace)
 
 	// add -skip  flag
 	if *skip != true {
@@ -28,10 +31,10 @@ func main() {
 	}
 
 	// check for png files
-	module.ProcessFilesIfPng(module.FileNameWithoutExtension(*filePath))
+	module.ProcessFilesIfPng(workspace)
 
 	// run ffmpeg to merge files using the input
-	module.MergePlaylist(module.FileNameWithoutExtension(*filePath))
+	module.MergePlaylist(workspace)
 
 	fmt.Printf("\nDownloaded completed for %v \n", module.GetBasename(*filePath))
 

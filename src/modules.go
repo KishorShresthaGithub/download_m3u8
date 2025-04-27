@@ -55,7 +55,7 @@ func GetBaseUrl(in string) string {
 }
 
 func ReadFile(filePath *string) (*[]string, *[]string) {
-	fmt.Printf("Working on %v \n", *filePath)
+	fmt.Printf("=================`Working on %v +++++ Reading \n", *filePath)
 
 	file, err := os.Open(*filePath)
 	Check(err)
@@ -100,14 +100,21 @@ func FileNameWithoutExtension(fileName string) string {
 	return strings.TrimSuffix(fileName, filepath.Ext(fileName))
 }
 
-func PrepareLinks(file *[]string, filename string) string {
+func CreateRequiredFolders(workspace string) {
 
-	withoutExtension := FileNameWithoutExtension(filename)
-
-	err := os.MkdirAll(withoutExtension, os.ModePerm)
+	fmt.Println("=================== Creatin required folders")
+	err := os.MkdirAll(workspace, os.ModePerm)
 	Check(err)
 
-	linkFile := fmt.Sprintf("%v/%v.links.txt", withoutExtension, withoutExtension)
+	err = os.MkdirAll(filepath.Join(workspace, "parts"), os.ModePerm)
+	Check(err)
+
+}
+
+func PrepareLinks(file *[]string, workspace string) string {
+	fmt.Println("====================== Preparing Links")
+
+	linkFile := fmt.Sprintf("%v/%v.links.txt", workspace, workspace)
 
 	newFile, err := os.Create(linkFile)
 	Check(err)
@@ -118,7 +125,8 @@ func PrepareLinks(file *[]string, filename string) string {
 	writer := bufio.NewWriter(newFile)
 
 	for _, url := range *file {
-		_, err := writer.WriteString(fmt.Sprintf("%v \n\t dir=%v \n\t out=parts/%v \n", url, withoutExtension, GetBasename(url)))
+		_, err := writer.WriteString(fmt.Sprintf("%v \n\t dir=%v \n\t out=parts/%v \n", url, workspace, GetBasename(url)))
+
 		Check(err)
 
 	}
@@ -128,18 +136,11 @@ func PrepareLinks(file *[]string, filename string) string {
 
 }
 
-func PreparePlaylist(file *[]string, filename string) string {
+func PreparePlaylist(file *[]string, workspace string) string {
 
-	withoutExtension := FileNameWithoutExtension(filename)
-	parts := filepath.Join(withoutExtension, "parts")
+	fmt.Println("====================== Preparing Playlists")
 
-	err := os.MkdirAll(withoutExtension, os.ModePerm)
-	Check(err)
-
-	err = os.MkdirAll(parts, os.ModePerm)
-	Check(err)
-
-	linkFile := fmt.Sprintf("%v/parts/%v.playlist.txt", withoutExtension, withoutExtension)
+	linkFile := fmt.Sprintf("%v/parts/%v.playlist.txt", workspace, workspace)
 
 	newFile, err := os.Create(linkFile)
 	Check(err)
@@ -195,7 +196,7 @@ func copyFile(src, dst string) error {
 }
 
 func ProcessFilesIfPng(workspace string) {
-
+	fmt.Println("======================= Process if pngg")
 	// Your main logic
 	parts := filepath.Join(workspace, "parts")
 	backup := filepath.Join(workspace, "backup")
@@ -218,8 +219,17 @@ func ProcessFilesIfPng(workspace string) {
 		return
 	}
 
+	// if check := CheckifPng(filepath.Join(parts, files[0].Name())); !check {
+	// 	return
+	// }
+	// fmt.Println("....................................................")
+
 	for _, srcEntry := range files {
 		srcPath := filepath.Join(parts, srcEntry.Name())
+
+		if strings.Contains(srcEntry.Name(), "playlist.txt") {
+			continue
+		}
 
 		// 1. Copy original to backup
 		backupPath := filepath.Join(backup, srcEntry.Name())
@@ -287,10 +297,7 @@ func JoinPlaylist() {
 func Check(err error) {
 
 	if err != nil {
-
-		log.Fatal(err)
 		panic(err)
-
 	}
 
 }
@@ -312,7 +319,7 @@ func MergePlaylist(filename string) {
 	cmd.Stdout = log.Writer()
 	cmd.Stderr = log.Writer()
 
-	fmt.Println("======================Starting download===================")
+	fmt.Println("======================Merging files===================")
 
 	err := cmd.Run()
 	Check(err)
