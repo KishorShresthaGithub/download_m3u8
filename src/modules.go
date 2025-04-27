@@ -71,6 +71,10 @@ func ReadFile(filePath *string) (*[]string, *[]string) {
 		line := scanner.Text()
 		basename := GetBasename(line)
 
+		if match, _ := regexp.MatchString("^<.+", line); match {
+			continue
+		}
+
 		if CheckIfLineStartsWithHash(line) {
 			videoInfo = append(videoInfo, line)
 
@@ -127,8 +131,12 @@ func PrepareLinks(file *[]string, filename string) string {
 func PreparePlaylist(file *[]string, filename string) string {
 
 	withoutExtension := FileNameWithoutExtension(filename)
+	parts := filepath.Join(withoutExtension, "parts")
 
 	err := os.MkdirAll(withoutExtension, os.ModePerm)
+	Check(err)
+
+	err = os.MkdirAll(parts, os.ModePerm)
 	Check(err)
 
 	linkFile := fmt.Sprintf("%v/parts/%v.playlist.txt", withoutExtension, withoutExtension)
