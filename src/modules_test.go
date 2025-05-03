@@ -48,7 +48,7 @@ func TestBasename(t *testing.T) {
 		expected string
 	}
 
-	data := []DataGroup{{"https://asd.com/asd", "asd"}, {"ttps://asd.com/asd1", "asd1"}, {"aasd.comhttp:.//path", "path"}, {"http://asd/123", "123"}}
+	data := []DataGroup{{"https://asd.com/asd", "asd"}, {"ttps://asd.com/asd1", "asd1"}, {"aasd.comhttp:.//path", "path"}, {"http://asd/123-12/480/v.m3u8", "v.m3u8"}}
 
 	Runner(t, data, func(data DataGroup) (string, string) {
 		return GetBasename(data.in), data.expected

@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -26,7 +27,13 @@ func InputPrompt() (*string, *bool) {
 }
 
 func GetBasename(str string) string {
-	return filepath.Base(str)
+	u, err := url.Parse(str)
+	Check(err)
+
+	u.RawQuery = ""
+	u.Fragment = ""
+
+	return filepath.Base(u.String())
 }
 
 func CheckIfLineIsLink(text string) bool {
@@ -65,7 +72,9 @@ func ReadFile(filePath *string) (*[]string, *[]string) {
 	links := make([]string, 0)
 	videoInfo := make([]string, 0)
 
-	firstLink := ""
+	firstLinkBaseUrl := ""
+	firstLinkBasename := ""
+	fileNameOnlyMode := false
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -77,18 +86,33 @@ func ReadFile(filePath *string) (*[]string, *[]string) {
 
 		if CheckIfLineStartsWithHash(line) {
 			videoInfo = append(videoInfo, line)
-
 		} else if CheckIfLineIsLink(line) {
 			links = append(links, line)
 			videoInfo = append(videoInfo, fmt.Sprintf("file %v", basename))
 
-			if firstLink == "" {
-				firstLink = GetBaseUrl(line)
+			if firstLinkBaseUrl == "" {
+				firstLinkBaseUrl = GetBaseUrl(line)
+				firstLinkBasename = GetBasename(line)
 			}
 
 		} else {
+			fileNameOnlyMode = true
 			videoInfo = append(videoInfo, fmt.Sprintf("file %v", basename))
-			links = append(links, fmt.Sprintf("%v/%v", firstLink, line))
+			links = append(links, fmt.Sprintf("%v/%v", firstLinkBaseUrl, line))
+
+		}
+
+	}
+
+	if fileNameOnlyMode {
+		name := fmt.Sprintf("file %v", firstLinkBasename)
+
+		index := slices.Index(videoInfo, name)
+
+		fmt.Println("++++++++++++++++++++++++++++++++++++++", index)
+
+		if index > -1 {
+			videoInfo = slices.Delete(videoInfo, index, index+1)
 		}
 
 	}
@@ -102,7 +126,7 @@ func FileNameWithoutExtension(fileName string) string {
 
 func CreateRequiredFolders(workspace string) {
 
-	fmt.Println("=================== Creatin required folders")
+	fmt.Println("=================== Creating required folders")
 	err := os.MkdirAll(workspace, os.ModePerm)
 	Check(err)
 
@@ -276,6 +300,7 @@ func DownloadUsingAria(inputFilename string) {
 		"--header=Sec-Fetch-Mode: navigate",
 		"--header=Sec-Fetch-Site: none",
 		"--header=Sec-Fetch-User: ?1",
+		"--file-allocation=prealloc",
 		"-j", "10", "-s", "10", "-x", "10", "-c",
 		"-i", inputFilename,
 	}
@@ -285,9 +310,11 @@ func DownloadUsingAria(inputFilename string) {
 	cmd.Stderr = log.Writer()
 
 	fmt.Println("======================Starting download===================")
-
 	err := cmd.Run()
-	Check(err)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func JoinPlaylist() {
@@ -302,6 +329,39 @@ func Check(err error) {
 
 }
 
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
+func CopyNeighborIfDoesntExist(fileLinks *[]string, workspace string) {
+
+	for k, item := range *fileLinks {
+
+		if CheckIfLineStartsWithHash(item) {
+			continue
+		}
+
+		filename := strings.TrimPrefix(item, "file ")
+		path := filepath.Join(workspace, "parts", filename)
+
+		if !fileExists(path) {
+			fmt.Printf("%v doesnt exist \n", path)
+
+			var prevItem string
+			if k-1 < 0 {
+				prevItem = (*fileLinks)[k+1]
+			} else {
+				prevItem = (*fileLinks)[k-1]
+			}
+			prevFilename := strings.TrimPrefix(prevItem, "file ")
+			prevPath := filepath.Join(workspace, "parts", prevFilename)
+			copyFile(prevPath, path)
+		}
+	}
+
+}
+
 func MergePlaylist(filename string) {
 
 	playlist := filepath.Join(filename, "parts", fmt.Sprintf("%v.playlist.txt", filename))
@@ -310,8 +370,10 @@ func MergePlaylist(filename string) {
 		"-f", "concat",
 		"-safe", "0",
 		"-i", playlist,
-		"-c", "copy",
-		"-crf", "22",
+		"-fflags", "+genpts",
+		"-r", "30",
+		"-c:v", "copy",
+		"-c:a", "copy",
 		fmt.Sprintf("%v.mp4", filename),
 	}
 

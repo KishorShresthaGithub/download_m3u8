@@ -33,6 +33,8 @@ func main() {
 	// check for png files
 	module.ProcessFilesIfPng(workspace)
 
+	module.CopyNeighborIfDoesntExist(fileLinks,workspace)
+
 	// run ffmpeg to merge files using the input
 	module.MergePlaylist(workspace)
 
