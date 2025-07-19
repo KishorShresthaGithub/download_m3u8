@@ -1,3 +1,3 @@
-module f
+module downloader
 
 go 1.23.4
