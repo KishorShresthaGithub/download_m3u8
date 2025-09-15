@@ -407,7 +407,7 @@ func MergePlaylist(filePath string) {
 		"-i", playlist,
 		"-fflags", "+genpts",
 		"-r", "30",
-		"-c:v", "copy",
+		"-c:v", "h264_nvenc",
 		"-c:a", "copy",
 		fmt.Sprintf("%v.mp4", filename),
 	}
