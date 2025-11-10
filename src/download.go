@@ -17,7 +17,7 @@ import (
 
 func RunProgram() {
 	// read file and get contents
-	filePath, skipFile, key, iv, urlEncode := InputPromt()
+	filePath, skipFile, key, iv, _ := InputPromt()
 
 	// create all required folders
 	CreateRequiredFolders(*filePath)
@@ -27,7 +27,7 @@ func RunProgram() {
 	//      create download input file
 	//      create ffmpeg playlist
 	// if there is only one link append the first link to the other links
-	links, playlist := ReadFile(*filePath, *urlEncode)
+	links, playlist := ReadFile(*filePath)
 
 	// copy text files to required folder
 	linksFile := WriteLinksToFile(*filePath, &links)
@@ -99,7 +99,7 @@ func GetBaseUrl(in string) string {
 	)
 }
 
-func ReadFile(filePath string, urlEncode bool) ([]string, []string) {
+func ReadFile(filePath string) ([]string, []string) {
 	fmt.Printf("========================================== Working in %v Reading\n", filePath)
 
 	fileName := GetBasename(filePath)
@@ -143,10 +143,6 @@ func ReadFile(filePath string, urlEncode bool) ([]string, []string) {
 			counter++
 		} else {
 			link := fmt.Sprintf("%v/%v", firstLinkBase, line)
-
-			if urlEncode {
-				link = url.QueryEscape(link)
-			}
 
 			links = append(links, link)
 			playlist = append(playlist, fmt.Sprintf("file %v_%v", fileName, counter))
@@ -369,6 +365,7 @@ func CheckIfFilesCorrupted(filePath string, playlist *[]string) {
 
 		args := []string{
 			"-v", "error",
+			"-f", "hls",
 			"-i", toCheck,
 			"-f", "null", "-",
 		}
