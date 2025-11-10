@@ -17,7 +17,7 @@ import (
 
 func RunProgram() {
 	// read file and get contents
-	filePath, skipFile, key, iv := InputPromt()
+	filePath, skipFile, key, iv, urlEncode := InputPromt()
 
 	// create all required folders
 	CreateRequiredFolders(*filePath)
@@ -27,7 +27,7 @@ func RunProgram() {
 	//      create download input file
 	//      create ffmpeg playlist
 	// if there is only one link append the first link to the other links
-	links, playlist := ReadFile(*filePath)
+	links, playlist := ReadFile(*filePath, *urlEncode)
 
 	// copy text files to required folder
 	linksFile := WriteLinksToFile(*filePath, &links)
@@ -89,7 +89,7 @@ func GetBaseUrl(in string) string {
 	u, err := url.Parse(in)
 	Check(err)
 
-	dirPath := path.Dir(u.Path)
+	dirPath := path.Dir(u.EscapedPath())
 
 	return fmt.Sprintf(
 		"%s://%s%s",
@@ -99,7 +99,7 @@ func GetBaseUrl(in string) string {
 	)
 }
 
-func ReadFile(filePath string) ([]string, []string) {
+func ReadFile(filePath string, urlEncode bool) ([]string, []string) {
 	fmt.Printf("========================================== Working in %v Reading\n", filePath)
 
 	fileName := GetBasename(filePath)
@@ -142,7 +142,13 @@ func ReadFile(filePath string) ([]string, []string) {
 			playlist = append(playlist, fmt.Sprintf("file %v_%v", fileName, counter))
 			counter++
 		} else {
-			links = append(links, fmt.Sprintf("%v/%v", firstLinkBase, line))
+			link := fmt.Sprintf("%v/%v", firstLinkBase, line)
+
+			if urlEncode {
+				link = url.QueryEscape(link)
+			}
+
+			links = append(links, link)
 			playlist = append(playlist, fmt.Sprintf("file %v_%v", fileName, counter))
 			counter++
 		}
@@ -170,11 +176,11 @@ func CreateRequiredFolders(filePath string) {
 	// Check(err)
 }
 
-func InputPromt() (*string, *bool, *string, *string) {
+func InputPromt() (*string, *bool, *string, *string, *bool) {
 	filePath := flag.String("i", "", "Input File")
 	skip := flag.Bool("s", false, "Skip Files")
-
 	keyFile := flag.String("k", "", "KeyFile")
+	urlEncode := flag.Bool("u", false, "Url Encode")
 
 	var ivFile *string
 
@@ -188,7 +194,7 @@ func InputPromt() (*string, *bool, *string, *string) {
 
 	flag.Parse()
 
-	return filePath, skip, keyFile, ivFile
+	return filePath, skip, keyFile, ivFile, urlEncode
 }
 
 func WriteLinksToFile(filePath string, links *[]string) string {
@@ -407,7 +413,7 @@ func MergePlaylist(filePath string) {
 		"-i", playlist,
 		"-fflags", "+genpts",
 		"-r", "30",
-		"-c:v", "h264_nvenc",
+		"-c:v", "copy",
 		"-c:a", "copy",
 		fmt.Sprintf("%v.mp4", filename),
 	}
