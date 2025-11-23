@@ -407,10 +407,11 @@ func MergePlaylist(filePath string) {
 	args := []string{
 		"-f", "concat",
 		"-safe", "0",
+		"-hwaccel", "cuda",
 		"-i", playlist,
 		"-fflags", "+genpts",
-		"-r", "30",
-		"-c:v", "copy",
+ 		"-preset", "p1", 
+		"-c:v", "h264_nvenc",
 		"-c:a", "copy",
 		fmt.Sprintf("%v.mp4", filename),
 	}
