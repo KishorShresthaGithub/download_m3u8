@@ -365,7 +365,6 @@ func CheckIfFilesCorrupted(filePath string, playlist *[]string) {
 
 		args := []string{
 			"-v", "error",
-			"-f", "hls",
 			"-i", toCheck,
 			"-f", "null", "-",
 		}
