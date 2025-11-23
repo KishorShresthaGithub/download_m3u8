@@ -370,8 +370,8 @@ func CheckIfFilesCorrupted(filePath string, playlist *[]string) {
 		}
 
 		cmd := exec.Command("ffmpeg", args...)
-		cmd.Stdout, _ = os.Open(os.DevNull)
-		cmd.Stderr, _ = os.Open(os.DevNull)
+		cmd.Stdout = nil
+		cmd.Stderr = nil
 
 		fmt.Println("======================Checking ===================")
 
@@ -409,8 +409,7 @@ func MergePlaylist(filePath string) {
 		"-hwaccel", "cuda",
 		"-i", playlist,
 		"-fflags", "+genpts",
- 		"-preset", "p1", 
-		"-c:v", "h264_nvenc",
+		"-c:v", "copy",
 		"-c:a", "copy",
 		fmt.Sprintf("%v.mp4", filename),
 	}
