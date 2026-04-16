@@ -257,8 +257,10 @@ func DownloadFiles(inputFilename string) {
 		"--header=Sec-Fetch-Mode: navigate",
 		"--header=Sec-Fetch-Site: none",
 		"--header=Sec-Fetch-User: ?1",
+		fmt.Sprintf("--header=Referer: %v ", os.Getenv("REFERER")),
 		"--file-allocation=prealloc",
-		"-j", "10", "-s", "10", "-x", "10", "-c",
+		fmt.Sprintf("--save-session=%v", inputFilename),
+		"-j", "5", "-s", "16", "-x", "10", "-c",
 		"-i", inputFilename,
 	}
 
